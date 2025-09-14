@@ -1,0 +1,133 @@
+-- LocalScript Hub Kai
+-- Colocar en StarterPlayerScripts
+
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+local root = character:WaitForChild("HumanoidRootPart")
+
+-- GUI principal
+local gui = Instance.new("ScreenGui")
+gui.Name = "HubKai"
+gui.Parent = player:WaitForChild("PlayerGui")
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 250, 0, 200)
+frame.Position = UDim2.new(0.3, 0, 0.3, 0)
+frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+frame.Active = true
+frame.Draggable = true
+frame.Parent = gui
+
+-- Botón cerrar
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0, 25, 0, 25)
+closeBtn.Position = UDim2.new(1, -30, 0, 5)
+closeBtn.Text = "X"
+closeBtn.Parent = frame
+
+-- Botón minimizar
+local minBtn = Instance.new("TextButton")
+minBtn.Size = UDim2.new(0, 25, 0, 25)
+minBtn.Position = UDim2.new(1, -60, 0, 5)
+minBtn.Text = "-"
+minBtn.Parent = frame
+
+-- Botón Explote
+local exploteBtn = Instance.new("TextButton")
+exploteBtn.Size = UDim2.new(0, 200, 0, 50)
+exploteBtn.Position = UDim2.new(0.1, 0, 0.6, 0)
+exploteBtn.Text = "Explote)"
+exploteBtn.BackgroundColor3 = Color3.fromRGB(20,20,20)
+exploteBtn.TextColor3 = Color3.new(1,1,1)
+exploteBtn.Parent = frame
+
+-- Overlay blanco
+local overlay = Instance.new("Frame")
+overlay.Size = UDim2.new(1, 0, 1, 0)
+overlay.Position = UDim2.new(0, 0, 0, 0)
+overlay.BackgroundColor3 = Color3.new(1, 1, 1)
+overlay.Visible = false
+overlay.ZIndex = 10
+overlay.Parent = gui
+
+local overlayLabel = Instance.new("TextLabel")
+overlayLabel.Size = UDim2.new(1,0,1,0)
+overlayLabel.BackgroundTransparency = 1
+overlayLabel.TextScaled = true
+overlayLabel.TextColor3 = Color3.new(0,0,0)
+overlayLabel.Text = "Espera.."
+overlayLabel.ZIndex = 11
+overlayLabel.Parent = overlay
+
+-- Función para buscar punto libre
+local function getSafePosition(origin, dir, dist)
+	local ray = Ray.new(origin, dir.Unit * dist)
+	local hit, pos = Workspace:FindPartOnRay(ray, character)
+	if hit then
+		return nil -- Bloqueado
+	else
+		return pos
+	end
+end
+
+-- Acción explote
+local function doExplote()
+	overlay.Visible = true
+	humanoid.PlatformStand = true
+
+	-- Simular temblor hacia adelante 2s
+	for i = 1, 40 do
+		root.CFrame = root.CFrame * CFrame.new(0,0,-0.1)
+		RunService.RenderStepped:Wait()
+	end
+
+	-- Movimiento derecha 2s
+	local posRight = getSafePosition(root.Position, root.CFrame.RightVector, 15)
+	if posRight then
+		local tween = TweenService:Create(root, TweenInfo.new(2, Enum.EasingStyle.Linear), {CFrame = CFrame.new(posRight)})
+		tween:Play()
+		tween.Completed:Wait()
+	end
+
+	-- Movimiento adelante 2s
+	local posForward = getSafePosition(root.Position, root.CFrame.LookVector, 20)
+	if posForward then
+		local tween = TweenService:Create(root, TweenInfo.new(2, Enum.EasingStyle.Linear), {CFrame = CFrame.new(posForward)})
+		tween:Play()
+		tween.Completed:Wait()
+	end
+
+	-- Mantener overlay visible 5s
+	wait(5)
+	overlay.Visible = false
+	humanoid.PlatformStand = false
+end
+
+exploteBtn.MouseButton1Click:Connect(doExplote)
+
+-- Cerrar menú
+closeBtn.MouseButton1Click:Connect(function()
+	gui.Enabled = false
+end)
+
+-- Minimizar menú
+minBtn.MouseButton1Click:Connect(function()
+	if frame.Visible then
+		frame.Visible = false
+		local mini = Instance.new("TextButton")
+		mini.Size = UDim2.new(0, 50, 0, 25)
+		mini.Position = UDim2.new(0, 10, 0, 10)
+		mini.Text = "+"
+		mini.Parent = gui
+		mini.MouseButton1Click:Connect(function()
+			frame.Visible = true
+			mini:Destroy()
+		end)
+	end
+end)
